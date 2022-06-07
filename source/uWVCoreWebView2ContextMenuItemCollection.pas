@@ -1,6 +1,7 @@
 unit uWVCoreWebView2ContextMenuItemCollection;
 
 {$IFDEF FPC}{$MODE Delphi}{$ENDIF}
+{$I webview2.inc}
 
 interface
 
@@ -38,7 +39,11 @@ uses
   {$IFDEF FPC}
   SysUtils, ActiveX,
   {$ELSE}
+  {$IFDEF DELPHI16_UP}
   System.SysUtils, Winapi.ActiveX,
+  {$ELSE}
+  SysUtils, ActiveX,
+  {$ENDIF}
   {$ENDIF}
   uWVCoreWebView2ContextMenuItem;
 

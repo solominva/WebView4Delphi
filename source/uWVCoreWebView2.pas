@@ -1,6 +1,7 @@
 unit uWVCoreWebView2;
 
 {$IFDEF FPC}{$MODE Delphi}{$ENDIF}
+{$I webview2.inc}
 
 interface
 
@@ -8,7 +9,11 @@ uses
   {$IFDEF FPC}
   Classes, Windows, ActiveX, SysUtils, Types,
   {$ELSE}
+  {$IFDEF DELPHI16_UP}
   System.Classes, WinApi.Windows, Winapi.ActiveX, System.SysUtils, System.Types,
+  {$ELSE}
+  Classes, Windows, ActiveX, SysUtils, Types,
+  {$ENDIF}
   {$ENDIF}
   uWVTypeLibrary, uWVTypes;
 

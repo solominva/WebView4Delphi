@@ -8,7 +8,11 @@ uses
   {$IFDEF FPC}
   Classes,
   {$ELSE}
+  {$IFDEF DELPHI16_UP}
   System.Classes,
+  {$ELSE}
+  Classes,
+  {$ENDIF}
   {$ENDIF}
   uWVTypeLibrary;
 

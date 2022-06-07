@@ -10,7 +10,11 @@ uses
   {$IFDEF FPC}
   Windows, Classes, ActiveX, SysUtils, Graphics, Math, Controls, StrUtils,
   {$ELSE}
-  Winapi.Windows, System.Classes, System.UITypes, Winapi.ActiveX, System.SysUtils, System.Math, System.StrUtils,
+  {$IFDEF DELPHI16_UP}
+  Winapi.Windows, System.Classes, System.UITypes, Winapi.ActiveX, System.SysUtils, System.Math,
+  {$ELSE}
+  Windows, Classes, Graphics, Controls, ActiveX, SysUtils, Math, StrUtils,
+  {$ENDIF}
   {$ENDIF}
   uWVConstants, uWVTypeLibrary, uWVTypes;
 
@@ -271,7 +275,11 @@ begin
       end;
     Inc(TempPos, 2);
     result := result + Temp;
+    {$IFDEF FUNC_POS_EXTENDED}
+    EscapeCharPos := Pos(ESCAPE_CHAR, Source, TempPos);
+    {$ELSE}
     EscapeCharPos := PosEx(ESCAPE_CHAR, Source, TempPos);
+    {$ENDIF}
   end;
   result := result + Copy(Source, TempPos, Length(Source) - TempPos + 1);
 end;

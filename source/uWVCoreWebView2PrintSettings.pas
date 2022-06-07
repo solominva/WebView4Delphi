@@ -1,6 +1,7 @@
 unit uWVCoreWebView2PrintSettings;
 
 {$IFDEF FPC}{$MODE Delphi}{$ENDIF}
+{$I webview2.inc}
 
 interface
 
@@ -8,7 +9,11 @@ uses
   {$IFDEF FPC}
   ActiveX,
   {$ELSE}
+  {$IFDEF DELPHI16_UP}
   System.Types, Winapi.ActiveX,
+  {$ELSE}
+  Types, ActiveX,
+  {$ENDIF}
   {$ENDIF}
   uWVTypeLibrary, uWVTypes;
 

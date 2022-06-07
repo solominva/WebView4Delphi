@@ -1,6 +1,7 @@
 unit uWVLibFunctions;
 
 {$IFDEF FPC}{$MODE Delphi}{$ENDIF}
+{$I webview2.inc}
 
 interface
 
@@ -8,7 +9,11 @@ uses
   {$IFDEF FPC}
   Windows,
   {$ELSE}
+  {$IFDEF DELPHI16_UP}
   WinApi.Windows,
+  {$ELSE}
+  Windows,
+  {$ENDIF}
   {$ENDIF}
   uWVTypeLibrary;
 

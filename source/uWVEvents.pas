@@ -1,6 +1,7 @@
 unit uWVEvents;
 
 {$IFDEF FPC}{$MODE Delphi}{$ENDIF}
+{$I webview2.inc}
 
 interface
 
@@ -8,7 +9,11 @@ uses
   {$IFDEF FPC}
   ActiveX, Messages,
   {$ELSE}
+  {$IFDEF DELPHI16_UP}
   Winapi.ActiveX, Winapi.Messages,
+  {$ELSE}
+  ActiveX, Messages, Types,
+  {$ENDIF}
   {$ENDIF}
   uWVTypeLibrary, uWVTypes;
 

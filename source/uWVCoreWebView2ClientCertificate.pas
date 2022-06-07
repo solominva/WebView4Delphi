@@ -47,7 +47,11 @@ uses
   {$IFDEF FPC}
   DateUtils, ActiveX;
   {$ELSE}
+  {$IFDEF DELPHI16_UP}
   System.DateUtils, Winapi.ActiveX;
+  {$ELSE}
+  DateUtils, ActiveX;
+  {$ENDIF}
   {$ENDIF}
 
 constructor TCoreWebView2ClientCertificate.Create(const aBaseIntf: ICoreWebView2ClientCertificate);

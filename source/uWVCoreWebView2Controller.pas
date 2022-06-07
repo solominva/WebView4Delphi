@@ -1,6 +1,7 @@
 unit uWVCoreWebView2Controller;
 
 {$IFDEF FPC}{$MODE Delphi}{$ENDIF}
+{$I webview2.inc}
 
 interface
 
@@ -8,7 +9,11 @@ uses
   {$IFDEF FPC}
   Classes, Graphics, Windows, SysUtils,
   {$ELSE}
+  {$IFDEF DELPHI16_UP}
   System.Classes, System.Types, System.UITypes, Winapi.Windows, System.SysUtils,
+  {$ELSE}
+    Classes, Types, Graphics, Windows, SysUtils,
+  {$ENDIF}
   {$ENDIF}
   uWVTypeLibrary, uWVTypes;
 
@@ -408,11 +413,11 @@ begin
      succeeded(FBaseIntf2.Get_DefaultBackgroundColor(TempResult)) then
     Result := CoreWebViewColorToDelphiColor(TempResult)
    else
-    {$IFDEF FPC}
+    {$IF DEFINED(FPC) OR NOT(DEFINED(DELPHI16_UP))}
     Result := clNone;
     {$ELSE}
     Result := TColors.SysNone;  // clNone
-    {$ENDIF}
+    {$IFEND}
 end;
 
 function TCoreWebView2Controller.GetRasterizationScale : double;

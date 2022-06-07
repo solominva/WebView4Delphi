@@ -10,7 +10,11 @@ uses
 {$IFDEF FPC}
   Windows,
 {$ELSE}
+{$IFDEF DELPHI16_UP}
   WinApi.Windows, WinApi.ShlObj, WinApi.ActiveX,
+{$ELSE}
+  Windows, ShlObj, ActiveX,
+{$ENDIF}
 {$ENDIF}
   uWVTypeLibrary, uWVTypes;
 
@@ -35,7 +39,12 @@ uses
 {$IFDEF FPC}
   ActiveX, Registry,
 {$ELSE}
-  IOUtils, System.Win.Registry,
+  IOUtils,
+{$IFDEF DELPHI16_UP}
+  System.Win.Registry,
+{$ELSE}
+  Registry,
+{$ENDIF}
 {$ENDIF}
   SysUtils;
 

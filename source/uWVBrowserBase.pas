@@ -11,9 +11,13 @@ uses
     Windows, Classes, Types, SysUtils, Graphics, ActiveX, Messages, httpprotocol,
     CommCtrl, fpjson, jsonparser,
   {$ELSE}
+   {$IFDEF DELPHI16_UP}
     Winapi.Windows, System.Classes, System.Types, System.UITypes, System.SysUtils,
     Winapi.ActiveX, Winapi.Messages, {$IFDEF DELPHI20_UP}System.JSON,{$ENDIF}
     {$IFDEF DELPHI21_UP}System.NetEncoding,{$ELSE}Web.HTTPApp,{$ENDIF}
+    {$ELSE}
+       Windows, Classes, Types, Graphics, SysUtils, ActiveX, Messages, DBXJSON, HTTPApp,
+    {$ENDIF}
   {$ENDIF}
   uWVTypes, uWVConstants, uWVTypeLibrary, uWVLibFunctions, uWVLoader,
   uWVInterfaces, uWVEvents, uWVCoreWebView2, uWVCoreWebView2Settings,
@@ -2443,11 +2447,11 @@ begin
   if Initialized then
     Result := FCoreWebView2Controller.DefaultBackgroundColor
    else
-    {$IFDEF FPC}
+    {$IF DEFINED(FPC) OR NOT(DEFINED(DELPHI16_UP))}
     Result := clNone;
     {$ELSE}
     Result := TColors.SysNone;  // clNone
-    {$ENDIF}
+    {$IFEND}
 end;
 
 function TWVBrowserBase.GetRasterizationScale : double;

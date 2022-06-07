@@ -1,6 +1,7 @@
 unit uWVCoreWebView2HttpHeadersCollectionIterator;
 
 {$IFDEF FPC}{$MODE Delphi}{$ENDIF}
+{$I webview2.inc}
 
 interface
 
@@ -32,7 +33,11 @@ uses
   {$IFDEF FPC}
   ActiveX;
   {$ELSE}
+  {$IFDEF DELPHI16_UP}
   Winapi.ActiveX;
+  {$ELSE}
+  ActiveX;
+  {$ENDIF}
   {$ENDIF}
 
 constructor TCoreWebView2HttpHeadersCollectionIterator.Create(const aBaseIntf: ICoreWebView2HttpHeadersCollectionIterator);

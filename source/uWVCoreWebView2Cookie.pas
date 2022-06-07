@@ -1,6 +1,7 @@
 unit uWVCoreWebView2Cookie;
 
 {$IFDEF FPC}{$MODE Delphi}{$ENDIF}
+{$I webview2.inc}
 
 interface
 
@@ -52,7 +53,11 @@ uses
   {$IFDEF FPC}
   ActiveX;
   {$ELSE}
+  {$IFDEF DELPHI16_UP}
   Winapi.ActiveX;
+  {$ELSE}
+  ActiveX;
+  {$ENDIF}
   {$ENDIF}
 
 constructor TCoreWebView2Cookie.Create(const aBaseIntf: ICoreWebView2Cookie);

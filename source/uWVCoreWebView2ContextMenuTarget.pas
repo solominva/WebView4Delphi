@@ -1,6 +1,7 @@
 unit uWVCoreWebView2ContextMenuTarget;
 
 {$IFDEF FPC}{$MODE Delphi}{$ENDIF}
+{$I webview2.inc}
 
 interface
 
@@ -54,7 +55,11 @@ uses
   {$IFDEF FPC}
   ActiveX;
   {$ELSE}
+  {$IFDEF DELPHI16_UP}
   Winapi.ActiveX;
+  {$ELSE}
+  ActiveX;
+  {$ENDIF}
   {$ENDIF}
 
 constructor TCoreWebView2ContextMenuTarget.Create(const aBaseIntf: ICoreWebView2ContextMenuTarget);

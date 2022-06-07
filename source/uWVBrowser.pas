@@ -10,12 +10,16 @@ uses
   {$IFDEF FPC}
   Classes, Types, Forms, Math, LResources,
   {$ELSE}
+  {$IFDEF DELPHI16_UP}
   System.Classes, System.Types, Vcl.Forms, System.Math,
+  {$ELSE}
+  Classes, Types, Forms, Math,
+  {$ENDIF}
   {$ENDIF}
   uWVBrowserBase;
 
 type
-  {$IFNDEF FPC}[ComponentPlatformsAttribute(pidWin32 or pidWin64)]{$ENDIF}
+  {$IF NOT(DEFINED(FPC)) AND DEFINED(DELPHI16_UP)}[ComponentPlatformsAttribute(pidWin32 or pidWin64)]{$IFEND}
   TWVBrowser = class(TWVBrowserBase)
     protected
       function  GetParentForm : TCustomForm;

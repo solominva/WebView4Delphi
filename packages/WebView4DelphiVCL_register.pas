@@ -1,6 +1,7 @@
 unit WebView4DelphiVCL_register;
 
 {$R res\webview4delphi.dcr}
+{$I ..\source\webview2.inc}
 
 interface
 
@@ -9,7 +10,12 @@ procedure Register;
 implementation
 
 uses
-  System.Classes, uWVBrowser, uWVWindowParent;
+  {$IFDEF DELPHI16_UP}
+  System.Classes,
+  {$ELSE}
+  Classes,
+  {$ENDIF}
+  uWVBrowser, uWVWindowParent;
 
 procedure Register;
 begin

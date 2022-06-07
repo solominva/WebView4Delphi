@@ -14,6 +14,7 @@ unit uWVTypeLibrary;
 // SEARCH FOR : ************** WEBVIEW4DELPHI **************
 
 {$IFDEF FPC}{$MODE Delphi}{$ENDIF}
+{$I webview2.inc}
 
 
 // ************************************************************************ //
@@ -58,7 +59,11 @@ uses
   {$IFDEF FPC}
   Windows, Classes, Variants, Graphics, ActiveX;
   {$ELSE}
+  {$IFDEF DELPHI16_UP}
   Winapi.Windows, System.Classes, System.Variants, System.Win.StdVCL, Vcl.Graphics, Winapi.ActiveX;
+  {$ELSE}
+  Windows, Classes, Variants, StdVCL, Graphics, ActiveX;
+  {$ENDIF}
   {$ENDIF}
 
   
@@ -2951,7 +2956,11 @@ uses
   {$IFDEF FPC}
   ComObj;
   {$ELSE}
+  {$IFDEF DELPHI16_UP}
   System.Win.ComObj;
+  {$ELSE}
+  ComObj;
+  {$ENDIF}
   {$ENDIF}
 
 
