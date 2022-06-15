@@ -19,9 +19,32 @@ uses
   uWVLibFunctions, uWVInterfaces, uWVTypeLibrary, uWVTypes, uWVEvents, uWVCoreWebView2Environment;
 
 type
+  TWVLoaderErrorType = (
+    leLoadLibrary,
+    leWVNotInstalled,
+    leBrowserExepath,
+    leWrongDigitCapacity32,
+    leWrongDigitCapacity64,
+    leUnknownWVDll,
+    leUnsupportedWVDll,
+    leLoadLibProcedures,
+    leCreatingBrowserEnv
+    );
+
+  TWVLoaderException = class(Exception)
+  public
+    ErrorType: TWVLoaderErrorType;
+    ErrorCode: Int64;
+
+    constructor Create(const ErrorType: TWVLoaderErrorType; const ErrorCode: Int64; const ErrorMessage: wvstring);
+  end;
+
   TWVProxySettings = class;
 
   TWVLoader = class(TComponent, IWVLoaderEvents)
+    private
+      FErrorType: TWVLoaderErrorType;
+      function GetLoaderLibPath: wvstring;
     protected
       FCoreWebView2Environment                : TCoreWebView2Environment;
       FOnEnvironmentCreated                   : TLoaderNotifyEvent;
@@ -107,7 +130,7 @@ type
       function  GetDLLHeaderMachine(const aDLLFile : string; var aMachine : integer) : boolean;
       function  Is32BitProcess : boolean;
       function  CheckInstalledRuntimeRegEntry(aLocalMachine : boolean; const aPath : string; var aVersion : wvstring) : boolean;
-      procedure ShowErrorMessageDlg(const aError : string);
+      procedure ShowErrorMessageDlg;
       function  SearchInstalledProgram(const aDisplayName, aPublisher : string) : boolean;
       function  SearchInstalledProgramInPath(const aRegPath, aDisplayName, aPublisher : string; aLocalMachine : boolean) : boolean;
 
@@ -150,6 +173,7 @@ type
       property InstalledRuntimeVersion                : wvstring                           read GetInstalledRuntimeVersion;
       property LoaderDllPath                          : wvstring                           read FLoaderDllPath                           write FLoaderDllPath;
       property UseInternalLoader                      : boolean                            read FUseInternalLoader                       write FUseInternalLoader;
+      property ErrorType                              : TWVLoaderErrorType                 read FErrorType;
 
       // Properties used to create the environment
       property BrowserExecPath                        : wvstring                           read FBrowserExecPath                         write FBrowserExecPath;                        // CreateCoreWebView2EnvironmentWithOptions "browserExecutableFolder" parameter
@@ -460,10 +484,7 @@ begin
 
         FStatus := wvlsLoading;
 
-        if (FLoaderDllPath <> '') then
-          TempLoaderLibPath := FLoaderDllPath
-         else
-          TempLoaderLibPath := WEBVIEW2LOADERLIB;
+        TempLoaderLibPath := GetLoaderLibPath;
 
         FLibHandle := LoadLibraryW(PWideChar(TempLoaderLibPath));
 
@@ -471,11 +492,8 @@ begin
           begin
             FStatus   := wvlsError;
             FError    := GetLastError;
-            FErrorMsg := 'Error loading ' + TempLoaderLibPath + CRLF + CRLF +
-                         'Error code : 0x' + inttohex(cardinal(FError), 8) + CRLF +
-                         SysErrorMessage(cardinal(FError));
 
-            ShowErrorMessageDlg(FErrorMsg);
+            ShowErrorMessageDlg;
           end
          else
           begin
@@ -592,11 +610,8 @@ begin
        else
         begin
           FStatus   := wvlsError;
-          FErrorMsg := 'WebView2 Runtime is not installed correctly.' + CRLF + CRLF +
-                       'Download and run the Evergreen Standalone Installer from ' + CRLF +
-                       'https://developer.microsoft.com/en-us/microsoft-edge/webview2/#download-section';
-
-          ShowErrorMessageDlg(FErrorMsg);
+          FErrorType := leWVNotInstalled;
+          ShowErrorMessageDlg;
         end;
     end
    else
@@ -605,9 +620,8 @@ begin
      else
       begin
         FStatus   := wvlsError;
-        FErrorMsg := 'The Browser Executable Folder doesn' + #39 + 't exist.';
-
-        ShowErrorMessageDlg(FErrorMsg);
+        FErrorType := leBrowserExePath;
+        ShowErrorMessageDlg;
       end;
 end;
 
@@ -620,85 +634,42 @@ begin
 {$ENDIF}
 end;
 
-procedure TWVLoader.ShowErrorMessageDlg(const aError : string);
-begin
-  if FShowMessageDlg then
-    {$IFDEF FPC}
-    ShowMessage(aError);
-    {$ELSE}
-    MessageBox(0, PChar(aError + #0), PChar('Error' + #0), MB_ICONERROR or MB_OK or MB_TOPMOST);
-    {$ENDIF}
-end;
+procedure TWVLoader.ShowErrorMessageDlg;
 
-function TWVLoader.CheckWV2DLL : boolean;
-var
-  TempMachine : integer;
-  TempVersionInfo : TFileVersionInfo;
-  TempLoaderLibPath : wvstring;
-begin
-  Result := False;
+  procedure GetErrorStr;
+  var
+    TempVersionInfo : TFileVersionInfo;
+    TempLoaderLibPath: wvstring;
+  begin
+    case FErrorType of
+      leLoadLibrary:
+        FErrorMsg := 'Error loading ' + GetLoaderLibPath + CRLF + CRLF +
+        'Error code : 0x' + inttohex(cardinal(FError), 8) + CRLF +
+        SysErrorMessage(cardinal(FError));
 
-  if FUseInternalLoader then
-    begin
-      Result := True;
-      exit;
-    end;
+      leWVNotInstalled:
+        FErrorMsg := 'WebView2 Runtime is not installed correctly.' + CRLF + CRLF +
+          'Download and run the Evergreen Standalone Installer from ' + CRLF +
+          'https://developer.microsoft.com/en-us/microsoft-edge/webview2/#download-section';
 
-  if FLoaderDllPath <> '' then
-    TempLoaderLibPath := FLoaderDllPath
-   else
-    TempLoaderLibPath := WEBVIEW2LOADERLIB;
+      leBrowserExePath:
+        FErrorMsg := 'The Browser Executable Folder doesn' + #39 + 't exist.';
 
-  if CheckDLLVersion(TempLoaderLibPath,
-                     WEBVIEW2LOADERLIB_VERSION_MAJOR,
-                     WEBVIEW2LOADERLIB_VERSION_MINOR,
-                     WEBVIEW2LOADERLIB_VERSION_RELEASE,
-                     WEBVIEW2LOADERLIB_VERSION_BUILD) then
-    begin
-      if GetDLLHeaderMachine(TempLoaderLibPath, TempMachine) then
-        case TempMachine of
-          WV2_IMAGE_FILE_MACHINE_I386 :
-            if Is32BitProcess then
-              Result := True
-             else
-              begin
-                FStatus   := wvlsError;
-                FErrorMsg := 'Wrong WebView2Loader.dll !' + CRLF + CRLF +
-                             'Use the 32 bit loader DLL with 32 bits applications only.';
+      leWrongDigitCapacity32:
+        FErrorMsg := 'Wrong WebView2Loader.dll !' + CRLF + CRLF + 'Use the 32 bit loader DLL with 32 bits applications only.';
 
-                ShowErrorMessageDlg(FErrorMsg);
-              end;
+      leWrongDigitCapacity64:
+        FErrorMsg := 'Wrong WebView2Loader.dll !' + CRLF + CRLF + 'Use the 64 bit loader DLL with 64 bits applications only.';
 
-          WV2_IMAGE_FILE_MACHINE_AMD64 :
-            if not(Is32BitProcess) then
-              Result := True
-             else
+      leUnknownWVDll:
+        FErrorMsg := 'Unknown WebView2Loader.dll !';
 
-              begin
-                FStatus   := wvlsError;
-                FErrorMsg := 'Wrong WebView2Loader.dll !' + CRLF + CRLF +
-                             'Use the 64 bit loader DLL with 64 bits applications only.';
+      leUnsupportedWVDll:
+      begin
+        TempLoaderLibPath := GetLoaderLibPath;
+        FErrorMsg := 'Unsupported WebView2Loader.dll version !';
 
-                ShowErrorMessageDlg(FErrorMsg);
-              end;
-
-          else
-            begin
-              FStatus   := wvlsError;
-              FErrorMsg := 'Unknown WebView2Loader.dll !';
-
-              ShowErrorMessageDlg(FErrorMsg);
-            end;
-        end
-       else
-        Result := True;
-    end
-   else
-    begin
-      FStatus   := wvlsError;
-      FErrorMsg := 'Unsupported WebView2Loader.dll version !';
-
-      if GetDLLVersion(TempLoaderLibPath, TempVersionInfo) then
+        if GetDLLVersion(TempLoaderLibPath, TempVersionInfo) then
         begin
           FErrorMsg := FErrorMsg + CRLF + CRLF +
                        'Expected WebView2Loader.dll version : ';
@@ -716,8 +687,99 @@ begin
                        IntToStr(TempVersionInfo.Release)  + '.' +
                        IntToStr(TempVersionInfo.Build);
         end;
+      end;
 
-      ShowErrorMessageDlg(FErrorMsg);
+      leLoadLibProcedures:
+        FErrorMsg := 'There was a problem loading the library procedures';
+
+      leCreatingBrowserEnv:
+        FErrorMsg := 'There was an error creating the browser environment. (1)' + CRLF +
+          'Error code : 0x' +
+          {$IFDEF FPC}
+          UTF8Decode(inttohex(TempHResult, 8))
+          {$ELSE}
+          inttohex(FError, 8)
+          {$ENDIF}
+          + CRLF + EnvironmentCreationErrorToString(FError);
+    end;
+  end;
+
+begin
+  GetErrorStr;
+  if FShowMessageDlg then
+  begin
+    {$IFDEF FPC}
+    ShowMessage(FErrorMsg);
+    {$ELSE}
+    MessageBox(0, PChar(FErrorMsg + #0), PChar('Error' + #0), MB_ICONERROR or MB_OK or MB_TOPMOST);
+    {$ENDIF}
+  end
+  else raise TWVLoaderException.Create(FErrorType, FError, FErrorMsg);
+end;
+
+function TWVLoader.CheckWV2DLL : boolean;
+var
+  TempMachine : integer;
+  TempLoaderLibPath : wvstring;
+begin
+  Result := False;
+
+  if FUseInternalLoader then
+    begin
+      Result := True;
+      exit;
+    end;
+
+  TempLoaderLibPath := GetLoaderLibPath;
+
+  if CheckDLLVersion(TempLoaderLibPath,
+                     WEBVIEW2LOADERLIB_VERSION_MAJOR,
+                     WEBVIEW2LOADERLIB_VERSION_MINOR,
+                     WEBVIEW2LOADERLIB_VERSION_RELEASE,
+                     WEBVIEW2LOADERLIB_VERSION_BUILD) then
+    begin
+      if GetDLLHeaderMachine(TempLoaderLibPath, TempMachine) then
+        case TempMachine of
+          WV2_IMAGE_FILE_MACHINE_I386 :
+            if Is32BitProcess then
+              Result := True
+             else
+              begin
+                FStatus   := wvlsError;
+                FErrorType := leWrongDigitCapacity32;
+                ShowErrorMessageDlg;
+              end;
+
+          WV2_IMAGE_FILE_MACHINE_AMD64 :
+            if not(Is32BitProcess) then
+              Result := True
+             else
+
+              begin
+                FStatus   := wvlsError;
+                FErrorType := leWrongDigitCapacity64;
+                FErrorMsg := 'Wrong WebView2Loader.dll !' + CRLF + CRLF +
+                             'Use the 64 bit loader DLL with 64 bits applications only.';
+
+                ShowErrorMessageDlg;
+              end;
+
+          else
+            begin
+              FStatus   := wvlsError;
+              FErrorType := leUnknownWVDll;
+
+              ShowErrorMessageDlg;
+            end;
+        end
+       else
+        Result := True;
+    end
+   else
+    begin
+      FStatus   := wvlsError;
+      FErrorType := leUnsupportedWVDll;
+      ShowErrorMessageDlg;
     end;
 end;
 
@@ -855,9 +917,8 @@ begin
          else
           begin
             FStatus   := wvlsError;
-            FErrorMsg := 'There was a problem loading the library procedures';
-
-            ShowErrorMessageDlg(FErrorMsg);
+            FErrorType := leLoadLibProcedures;
+            ShowErrorMessageDlg;
           end;
       end;
   except
@@ -1118,16 +1179,8 @@ begin
           begin
             FStatus   := wvlsError;
             FError    := TempHResult;
-            FErrorMsg := 'There was an error creating the browser environment. (1)' + CRLF +
-                         'Error code : 0x' +
-                         {$IFDEF FPC}
-                         UTF8Decode(inttohex(TempHResult, 8))
-                         {$ELSE}
-                         inttohex(TempHResult, 8)
-                         {$ENDIF}
-                         + CRLF + EnvironmentCreationErrorToString(TempHResult);
-
-            ShowErrorMessageDlg(FErrorMsg);
+            FErrorType := leCreatingBrowserEnv;
+            ShowErrorMessageDlg;
           end;
       end;
   finally
@@ -1223,6 +1276,12 @@ begin
     FDeviceScaleFactor := GetDeviceScaleFactor;
 end;
 
+function TWVLoader.GetLoaderLibPath: wvstring;
+begin
+  if (FLoaderDllPath <> '') then result := FLoaderDllPath
+  else result := WEBVIEW2LOADERLIB;
+end;
+
 function TWVLoader.StartWebView2 : boolean;
 begin
   if FInitCOMLibrary then
@@ -1298,6 +1357,15 @@ begin
   FByPassList    := '';
   FPacUrl        := '';
   FServer        := '';
+end;
+
+{ TWVLoaderException }
+
+constructor TWVLoaderException.Create(const ErrorType: TWVLoaderErrorType; const ErrorCode: Int64; const ErrorMessage: wvstring);
+begin
+  Self.ErrorType := ErrorType;
+  Self.ErrorCode := ErrorCode;
+  Self.Message := ErrorMessage;
 end;
 
 initialization

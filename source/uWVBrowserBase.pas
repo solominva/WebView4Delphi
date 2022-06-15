@@ -16,7 +16,7 @@ uses
     Winapi.ActiveX, Winapi.Messages, {$IFDEF DELPHI20_UP}System.JSON,{$ENDIF}
     {$IFDEF DELPHI21_UP}System.NetEncoding,{$ELSE}Web.HTTPApp,{$ENDIF}
     {$ELSE}
-       Windows, Classes, Types, Graphics, SysUtils, ActiveX, Messages, DBXJSON, HTTPApp,
+       Windows, Classes, Types, Graphics, SysUtils, ActiveX, Messages, HTTPApp,
     {$ENDIF}
   {$ENDIF}
   uWVTypes, uWVConstants, uWVTypeLibrary, uWVLibFunctions, uWVLoader,
